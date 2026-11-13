@@ -73,8 +73,15 @@ class MemoryDB {
       findOne: async (query: any) => {
         return store.find(item => {
           for (const key of Object.keys(query)) {
-            if (key === '_id' && (item._id === query._id || item.id === query._id)) {
-              continue;
+            if (key === '_id' || key === 'id') {
+              const qVal = query[key]?.toString();
+              const itemVal = (item._id || item.id)?.toString();
+              if (itemVal === qVal) continue;
+              return false;
+            }
+            if (key === 'email' && typeof query[key] === 'string' && typeof item[key] === 'string') {
+              if (item[key].toLowerCase() === query[key].toLowerCase()) continue;
+              return false;
             }
             if (item[key] !== query[key]) return false;
           }
@@ -110,8 +117,15 @@ class MemoryDB {
       deleteOne: async (query: any) => {
         const index = store.findIndex(item => {
           for (const key of Object.keys(query)) {
-            if (key === '_id' && (item._id === query._id || item.id === query._id)) {
-              continue;
+            if (key === '_id' || key === 'id') {
+              const qVal = query[key]?.toString();
+              const itemVal = (item._id || item.id)?.toString();
+              if (itemVal === qVal) continue;
+              return false;
+            }
+            if (key === 'email' && typeof query[key] === 'string' && typeof item[key] === 'string') {
+              if (item[key].toLowerCase() === query[key].toLowerCase()) continue;
+              return false;
             }
             if (item[key] !== query[key]) return false;
           }
@@ -185,6 +199,12 @@ export async function connectDB(): Promise<Db> {
     return db;
   } catch (err: any) {
     console.warn('[DB] MongoDB Connection notice:', err.message);
+    if (client) {
+      try {
+        client.close().catch(() => {});
+      } catch (e) {}
+      client = null;
+    }
     console.log('[DB] Using high-fidelity In-Memory Store for reliable development & testing.');
     isUsingMemoryDb = true;
     return memoryDb as unknown as Db;

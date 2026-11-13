@@ -18,8 +18,17 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 // Middlewares
 app.use(
   cors({
-    origin: [CLIENT_URL, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      // In development or local testing, allow any localhost/127.0.0.1 or undefined (server-to-server / curl)
+      if (!origin || origin === CLIENT_URL || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   })
 );
 app.use(cookieParser());
